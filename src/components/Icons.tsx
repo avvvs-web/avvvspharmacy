@@ -23,3 +23,29 @@ export const DoctorIcon = (p: P) => <S {...p}><circle cx="12" cy="7" r="3.5" /><
 export const ClockIcon = (p: P) => <S {...p}><circle cx="12" cy="12" r="8" /><path d="M12 8v4l2.5 2.5" /></S>;
 export const UploadIcon = (p: P) => <S {...p}><path d="M12 15V4m-4 4 4-4 4 4" /><path d="M5 15v4h14v-4" /></S>;
 export const PrintIcon = (p: P) => <S {...p}><path d="M7 9V4h10v5M7 17H5v-6h14v6h-2" /><path d="M7 14h10v6H7z" /></S>;
+
+/** One small line drawing for each form of medicine (the "by preparation" index). Decorative. */
+const FORM_PATHS: Record<string, React.ReactNode> = {
+  // a cup of decoction, steaming
+  kashayam: <><path d="M5 10h12v3a6 6 0 0 1-12 0v-3Z" /><path d="M17 11h1.5a2 2 0 0 1 0 4H17" /><path d="M9 4c0 1.5 1 1.5 1 3M13 4c0 1.5 1 1.5 1 3" /><path d="M7 21h8" /></>,
+  // a tonic bottle
+  arishtam: <><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3V3Z" /><path d="M8 13h8" /></>,
+  // a drop of oil
+  thailam: <><path d="M12 3c3.5 4.5 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 2.5-6.5 6-11Z" /><path d="M9.5 14.5A2.5 2.5 0 0 0 12 17" /></>,
+  // mortar and pestle
+  choornam: <><path d="M5 11h14a7 7 0 0 1-14 0Z" /><path d="M12 18v2M9 20.5h6" /><path d="m14 9 5-6" /></>,
+  // a jar
+  lehyam: <><path d="M8 4h8v3H8z" /><path d="M7 7h10l1 3v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-8l1-3Z" /><path d="M6 13h12" /></>,
+  // a lidded ghee pot
+  ghritham: <><path d="M6 10c0 6 2 9.5 6 9.5s6-3.5 6-9.5" /><path d="M5 10h14" /><path d="M9 10c0-2 1.3-3 3-3s3 1 3 3" /><path d="M12 7V5" /></>,
+  capsule: <><path d="M8.5 15.5a4 4 0 0 1 0-5.7l3.3-3.3a4 4 0 0 1 5.7 5.7l-3.3 3.3a4 4 0 0 1-5.7 0Z" /><path d="m10.1 8.1 5.8 5.8" /></>,
+  // a spoonful of syrup
+  syrup: <><path d="M4 13c0-2.2 2-4 4.5-4s4.5 1.8 4.5 4-2 4-4.5 4S4 15.2 4 13Z" /><path d="M13 13h7" /><path d="M17 4c1 1.3 1.6 2.1 1.6 3a1.6 1.6 0 0 1-3.2 0c0-.9.6-1.7 1.6-3Z" /></>,
+  // a liniment bottle with a nozzle
+  liniment: <><path d="M9 9h6l1 10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1L9 9Z" /><path d="M10 5h4v4h-4z" /><path d="M12 3v2" /></>,
+  // AVVVS's own: the leaf
+  proprietary: <><path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14Z" /><path d="M5 19 13 11" /></>,
+};
+export const FormIcon = ({ slug, className }: { slug: string; className?: string }) => (
+  <S className={className}>{FORM_PATHS[slug] ?? FORM_PATHS.proprietary}</S>
+);

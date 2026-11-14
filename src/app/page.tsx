@@ -3,10 +3,12 @@ import Link from 'next/link';
 import { getCollectionPage, getProducts } from '@/lib/shopify/catalog';
 import { safe } from '@/lib/shopify/client';
 import type { ProductPage } from '@/lib/shopify/types';
-import { COLLECTIONS, CONCERNS, CONTACT, FORMS, MAIN_SITE, ORG } from '@/lib/site';
+import { COLLECTIONS, CONCERNS, CONTACT, FORMS, MAIN_SITE, ORG, formByType } from '@/lib/site';
 import { money } from '@/lib/format';
 import { medicineName } from '@/content/medicines';
 import { GlovedaBanner } from '@/components/Gloveda';
+import { HeroShowcase } from '@/components/HeroShowcase';
+import { FormIcon } from '@/components/Icons';
 import { ProductGrid } from '@/components/ProductTile';
 import { HeroSearch, RecentlyViewed } from '@/components/HomeParts';
 import { JsonLd } from '@/components/JsonLd';
@@ -23,10 +25,14 @@ const EMPTY: ProductPage = { products: [], pageInfo: { hasNextPage: false, endCu
 export default async function Home() {
   const [classical, proprietary, popular] = await Promise.all([
     safe(getCollectionPage('classical', { inStock: true, first: 8 }).then((r) => r?.page ?? EMPTY), EMPTY),
-    safe(getCollectionPage('proprietary', { inStock: true, first: 4 }).then((r) => r?.page ?? EMPTY), EMPTY),
+    safe(getCollectionPage('proprietary', { inStock: true, first: 6 }).then((r) => r?.page ?? EMPTY), EMPTY),
     safe(getProducts({ inStock: true, sort: 'featured', first: 8 }), EMPTY),
   ]);
-  const heroShots = [...popular.products, ...classical.products].filter((p) => p.featuredImage).filter((p, i, a) => a.findIndex((x) => x.id === p.id) === i).slice(0, 3);
+  // the hero shows AVVVS's own proprietary medicines (those with a photograph)
+  const showcase = proprietary.products.filter((p) => p.featuredImage).slice(0, 4).map((p) => ({
+    handle: p.handle, name: medicineName(p.handle, p.title), form: formByType(p.productType)?.name ?? 'Proprietary',
+    price: money(p.priceRange.minVariantPrice, { compact: true }), image: fitted(p.featuredImage!.url),
+  }));
 
   return (
     <>
@@ -45,17 +51,7 @@ export default async function Home() {
               <a className="btn-quiet" href={CONTACT.clinic} rel="noopener">Consult a doctor</a>
             </div>
           </div>
-          {heroShots.length > 0 && (
-            <figure className="hero-art" data-anim="stagger">
-              {heroShots.map((p, i) => (
-                <Link key={p.id} href={`/products/${p.handle}`}>
-                  <span className="niche"><Image src={fitted(p.featuredImage!.url)} alt="" fill sizes="(max-width: 900px) 30vw, 240px" priority={i < 2} /></span>
-                  <span className="niche-cap"><b>{medicineName(p.handle, p.title)}</b><span>{money(p.priceRange.minVariantPrice, { compact: true })}</span></span>
-                </Link>
-              ))}
-              <figcaption>The pharmacy’s most ordered medicines, in stock now.</figcaption>
-            </figure>
-          )}
+          <HeroShowcase items={showcase} />
         </div>
       </section>
 
@@ -77,9 +73,12 @@ export default async function Home() {
           {FORMS.map((f) => (
             <li key={f.slug}>
               <Link href={`/shop/${f.slug}`}>
-                <b>{f.name}</b>
-                {f.ml && <span className="ml" lang="ml">{f.ml}</span>}
-                <span>{f.note}</span>
+                <FormIcon slug={f.slug} />
+                <span className="forms-text">
+                  <b>{f.name}</b>
+                  {f.ml && <span className="ml" lang="ml">{f.ml}</span>}
+                  <span>{f.note}</span>
+                </span>
               </Link>
             </li>
           ))}
@@ -140,7 +139,7 @@ export default async function Home() {
             <h2 id="prop-h">AVVVS formulations</h2>
             <Link className="link" href="/collections/proprietary">See all</Link>
           </div>
-          <ProductGrid products={proprietary.products} className="grid grid-4" />
+          <ProductGrid products={proprietary.products.slice(0, 4)} className="grid grid-4" />
         </section>
       )}
 
