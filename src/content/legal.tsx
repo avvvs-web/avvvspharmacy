@@ -148,9 +148,10 @@ export const LEGAL_CONTENT: Record<string, LegalPage> = {
 
         <h2>Prescription data</h2>
         <C>Prescription data is held in private storage and is not accessible at any public address.</C>
-        <C>The Order carries a cryptographically signed link to the file, which may be opened only through the Store and which ceases to be valid sixty (60) days after its creation.</C>
+        <C>The Order carries a cryptographically signed link to the file, which may be opened only through the Store and which ceases to be valid thirty (30) days after the file is uploaded.</C>
+        <C>Prescription data is deleted automatically from our storage thirty (30) days after it is uploaded. A prescription required after that period shall be furnished afresh.</C>
         <C>Access to Prescription data is restricted to pharmacy personnel engaged in the verification and fulfilment of Orders, who are bound by obligations of confidentiality.</C>
-        <C>You may remove the file from your cart at any time before checkout. Thereafter you may request its deletion in writing, and we shall delete it save to the extent that its retention is required by Applicable Law.</C>
+        <C>You may remove the file from your cart at any time before checkout. Thereafter you may request its earlier deletion in writing, and we shall delete it without awaiting the expiry of the said period.</C>
 
         <h2>Cookies and local storage</h2>
         <C>The Store uses cookies and the local storage of your browser as set out below. Essential items are necessary for the operation of the Store and cannot be disabled. All other items are placed only upon your consent, which may be given, refused or withdrawn through the “Cookie settings” link at the foot of every page.</C>
@@ -175,7 +176,7 @@ export const LEGAL_CONTENT: Record<string, LegalPage> = {
         <Sub>
           <li>Order and invoice records, for the period prescribed by applicable tax, consumer protection and pharmacy laws;</li>
           <li>Account data, until closure of the account at your request;</li>
-          <li>Prescription data, for the period necessary to verify and record the Order to which it relates;</li>
+          <li>Prescription data, for thirty (30) days from the date of upload, whereupon it is deleted automatically;</li>
           <li>Stock alert data, until the notification has been sent or the request has been withdrawn; and</li>
           <li>abuse-prevention counters, for up to two (2) days.</li>
         </Sub>

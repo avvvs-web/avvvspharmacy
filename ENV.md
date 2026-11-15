@@ -56,11 +56,19 @@ Without them, pages still refresh from Shopify every 5 minutes. Webhook list: `S
 |---|---|---|---|
 | `BLOB_READ_WRITE_TOKEN` | Vercel (+ local to test) | Vercel → the project → **Storage → Create → Blob**. Connecting the store to the project adds this variable for you. | **Yes** |
 
-When you create the Blob store, choose **Private** access. Prescriptions are stored privately; the order in Shopify carries a signed link through the store that stops working after 60 days. Files can be up to 4 MB.
+When you create the Blob store, choose **Private** access. Prescriptions are stored privately; the order in Shopify carries a signed link through the store that stops working after 30 days. Files can be up to 4 MB.
 
 The signed links also need `SESSION_SECRET` to be set (or a separate `PRESCRIPTION_LINK_SECRET` of 32 or more characters). Changing that secret makes every earlier prescription link stop working.
 
 Without the token, the upload box asks customers to email their prescription instead.
+
+### Automatic deletion after 30 days
+
+| Variable | Where | Value / where to get it | Secret? |
+|---|---|---|---|
+| `CRON_SECRET` | Vercel | Any random string of 16 or more characters, e.g. from `openssl rand -hex 32`. Vercel sends it with the daily job. | **Yes** |
+
+A daily Vercel Cron job (`vercel.json`, 03:00 India time) calls `/api/prescription/cleanup`, which deletes every stored prescription older than 30 days. **Without `CRON_SECRET` the job is refused and nothing is deleted**, so add it when you switch uploads on. After a deploy, check Vercel → the project → **Cron Jobs** to see it listed and run it once by hand.
 
 ## 5. Back-in-stock alerts (optional)
 

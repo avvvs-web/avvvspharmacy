@@ -49,8 +49,12 @@ export const clientIp = (req: NextRequest) =>
 /* ---------------- signed links to private prescription files ---------------- */
 
 const PRESCRIPTION_PATH = /^prescriptions\/\d{4}-\d{2}\/[A-Za-z0-9._-]{8,200}$/;
-/** How long a prescription link on an order keeps working. */
-export const PRESCRIPTION_LINK_DAYS = 60;
+/**
+ * How long a stored prescription is kept. After this many days the file is deleted by the daily
+ * clean-up (/api/prescription/cleanup), and the link on the order stops working at the same time.
+ */
+export const PRESCRIPTION_KEEP_DAYS = 30;
+export const PRESCRIPTION_LINK_DAYS = PRESCRIPTION_KEEP_DAYS;
 
 function linkKey(): string | null {
   const s = process.env.PRESCRIPTION_LINK_SECRET || process.env.SESSION_SECRET;
