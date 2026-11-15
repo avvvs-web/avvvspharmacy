@@ -4,6 +4,14 @@
 **Commit assessed:** `5f62a11` (local `main`)
 **Result:** no critical or high-severity weakness found. Five medium and eleven low findings, listed below. Nothing was changed in the code.
 
+## Fix status (15 November 2026)
+
+Code fixes for every finding below are in the commit after this assessment. The store's 13 automated tests pass and `npm audit` reports no advisories.
+
+**Still to do:** retest each finding the way it was found. In particular, sign-in has not been tried end to end since the token checks were added, and prescription upload has not been tried against a private Blob store.
+
+**L4** was fixed separately: the webhook now accepts Shopify's signature (`SHOPIFY_WEBHOOK_SECRET`). The secret in the address is still accepted for manual refreshes and is compared with `===`.
+
 ## Scope and method
 
 | | |

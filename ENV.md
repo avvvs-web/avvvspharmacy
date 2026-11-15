@@ -56,7 +56,11 @@ Without them, pages still refresh from Shopify every 5 minutes. Webhook list: `S
 |---|---|---|---|
 | `BLOB_READ_WRITE_TOKEN` | Vercel (+ local to test) | Vercel → the project → **Storage → Create → Blob**. Connecting the store to the project adds this variable for you. | **Yes** |
 
-Without it, the upload box asks customers to email their prescription instead.
+When you create the Blob store, choose **Private** access. Prescriptions are stored privately; the order in Shopify carries a signed link through the store that stops working after 60 days. Files can be up to 4 MB.
+
+The signed links also need `SESSION_SECRET` to be set (or a separate `PRESCRIPTION_LINK_SECRET` of 32 or more characters). Changing that secret makes every earlier prescription link stop working.
+
+Without the token, the upload box asks customers to email their prescription instead.
 
 ## 5. Back-in-stock alerts (optional)
 
