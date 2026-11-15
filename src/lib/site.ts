@@ -79,16 +79,17 @@ export const concernBySlug = (slug: string) => CONCERNS.find((c) => c.slug === s
 
 /** Shopify Pages that already exist on the store, shown in the footer. */
 export const HELP_PAGES = [
-  { handle: 'shipping', label: 'Shipping' },
-  { handle: 'return-policy', label: 'Returns & refunds' },
+  { handle: 'shipping', label: 'Shipping & delivery' },
+  { handle: 'return-policy', label: 'Cancellation & refunds' },
   { handle: 'payments', label: 'Payments' },
-  { handle: 'faqs', label: 'FAQs' },
-  { handle: 'tracking', label: 'Track an order' },
-  { handle: 'contact', label: 'Contact' },
+  { handle: 'contact', label: 'Contact us' },
 ] as const;
 export const LEGAL_PAGES = [
-  { handle: 'privacy-policy', label: 'Privacy' },
-  { handle: 'term-of-use', label: 'Terms of use' },
+  { handle: 'privacy-policy', label: 'Privacy policy' },
+  { handle: 'term-of-use', label: 'Terms & conditions' },
+  { handle: 'return-policy', label: 'Cancellation & refund policy' },
+  { handle: 'shipping', label: 'Shipping & delivery policy' },
+  { handle: 'contact', label: 'Contact us' },
 ] as const;
 
 export const FREE_SHIPPING = Number(process.env.NEXT_PUBLIC_FREE_SHIPPING_THRESHOLD || 0) || 0;

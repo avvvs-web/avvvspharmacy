@@ -164,7 +164,7 @@ export function PrescriptionUpload({ cart }: { cart: Cart }) {
         <RxIcon />
         <div>
           <h3>Prescription or doctor’s note <span className="muted">(optional)</span></h3>
-          <p>Attach one if you have it, and our pharmacist will check your order against it.</p>
+          <p>Attach one if you have it, and our pharmacist will check your order against it. By attaching it you agree to us using it for this order. It is stored privately; see our <Link href="/pages/privacy-policy">privacy policy</Link>.</p>
         </div>
       </div>
       {url ? (
