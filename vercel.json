@@ -2,7 +2,18 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "regions": ["bom1"],
-  "crons": [{ "path": "/api/prescription/cleanup", "schedule": "30 21 * * *" }],
+  "functions": {
+    "src/app/api/prescription/cleanup/route.ts": {
+      "experimentalTriggers": [{ "type": "schedule/v1beta" }]
+    }
+  },
+  "schedules": {
+    "prescription-cleanup": {
+      "schedule": "0 3 * * *",
+      "timezone": "Asia/Kolkata",
+      "function": "api/prescription/cleanup"
+    }
+  },
   "headers": [
     {
       "source": "/brand/(.*)",

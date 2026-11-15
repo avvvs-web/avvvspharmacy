@@ -15,3 +15,6 @@ playwright-report/
 
 # hallmark records and screenshots
 .hallmark/
+
+# vercel project link
+.vercel

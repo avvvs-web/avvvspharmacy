@@ -12,7 +12,7 @@ import { PRESCRIPTION_LINKS_READY, clientIp, prescriptionLink, sameOrigin } from
  *  - The file is stored PRIVATELY in Vercel Blob. What goes on the order is a signed link through
  *    this store (/api/prescription/file) that stops working after 30 days; the storage address
  *    itself is never shown to anyone.
- *  - The file itself is deleted after 30 days by /api/prescription/cleanup (a daily Vercel Cron job).
+ *  - The file itself is deleted after 30 days by /api/prescription/cleanup (a private, daily Vercel Schedule).
  */
 export const runtime = 'nodejs';
 

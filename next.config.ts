@@ -32,6 +32,9 @@ export default function config(phase: string): NextConfig {
     reactStrictMode: true,
     poweredByHeader: false,
     images: {
+      // photographs load straight from Shopify's image service at the size each slot needs
+      loader: 'custom',
+      loaderFile: './src/lib/shopify/imageLoader.ts',
       remotePatterns: [
         { protocol: 'https', hostname: 'cdn.shopify.com' },
       ],

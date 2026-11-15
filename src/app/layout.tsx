@@ -40,7 +40,11 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, view
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-IN" className={`${castle.variable} ${noto.variable}`} suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{ __html: ANIM_BOOT }} /></head>
+      <head>
+        {/* product photographs come from Shopify's image service: open that connection early */}
+        <link rel="preconnect" href="https://cdn.shopify.com" />
+        <script dangerouslySetInnerHTML={{ __html: ANIM_BOOT }} />
+      </head>
       <body suppressHydrationWarning>
         <a href="#main" className="skip">Skip to content</a>
         <StoreProvider>

@@ -64,11 +64,11 @@ Without the token, the upload box asks customers to email their prescription ins
 
 ### Automatic deletion after 30 days
 
-| Variable | Where | Value / where to get it | Secret? |
-|---|---|---|---|
-| `CRON_SECRET` | Vercel | Any random string of 16 or more characters, e.g. from `openssl rand -hex 32`. Vercel sends it with the daily job. | **Yes** |
+No variable is needed. A Vercel Schedule named `prescription-cleanup` (`vercel.json`) runs every day at 03:00 India time and deletes every stored prescription older than 30 days. The function behind it (`src/app/api/prescription/cleanup/route.ts`) is private: it has no public address and only Vercel's scheduler can run it, so there is no secret to keep.
 
-A daily Vercel Cron job (`vercel.json`, 03:00 India time) calls `/api/prescription/cleanup`, which deletes every stored prescription older than 30 days. **Without `CRON_SECRET` the job is refused and nothing is deleted**, so add it when you switch uploads on. After a deploy, check Vercel → the project → **Cron Jobs** to see it listed and run it once by hand.
+To check it after a production deploy: Vercel → the project → **Schedules**, where you can see the next run, the history, and **Run Schedule** to run it once by hand. From a terminal: `vercel schedules list` and `vercel schedules invoke prescription-cleanup`.
+
+A failed run is not retried; the next day's run deletes whatever was missed.
 
 ## 5. Back-in-stock alerts (optional)
 
