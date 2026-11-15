@@ -15,7 +15,7 @@ export const ACCOUNTS_ENABLED = !!CLIENT_ID && !!process.env.SESSION_SECRET;
 export const REDIRECT_URI = `${SITE_URL}/account/callback`;
 const UA = 'AVVVS Ayur Store (shop.avvvs.com)';
 
-type Discovery = { authorization_endpoint: string; token_endpoint: string; end_session_endpoint: string; graphql_api: string };
+type Discovery = { authorization_endpoint: string; token_endpoint: string; end_session_endpoint: string; graphql_api: string; issuer: string; jwks_uri: string };
 let discovery: Promise<Discovery> | null = null;
 
 export function endpoints(): Promise<Discovery> {
@@ -27,10 +27,60 @@ export function endpoints(): Promise<Discovery> {
       ]);
       // pin the API version this store was built against
       const graphql = String(api.graphql_api).replace(/\/api\/[^/]+\/graphql$/, `/api/${VERSION}/graphql`);
-      return { authorization_endpoint: oidc.authorization_endpoint, token_endpoint: oidc.token_endpoint, end_session_endpoint: oidc.end_session_endpoint, graphql_api: graphql };
+      return { authorization_endpoint: oidc.authorization_endpoint, token_endpoint: oidc.token_endpoint, end_session_endpoint: oidc.end_session_endpoint, graphql_api: graphql, issuer: oidc.issuer, jwks_uri: oidc.jwks_uri };
     })().catch((e) => { discovery = null; throw e; });
   }
   return discovery;
+}
+
+/* ---------------- the identity token ---------------- */
+
+type Jwk = JsonWebKey & { kid?: string; alg?: string };
+let keys: { at: number; list: Jwk[] } | null = null;
+
+/** Shopify's published signing keys for this store's sign-in, cached for an hour (refetched once for an unknown key). */
+async function signingKey(kid: string | undefined): Promise<Jwk | undefined> {
+  const find = () => keys?.list.find((k) => k.kid === kid);
+  if (!keys || Date.now() - keys.at > 3600_000 || !find()) {
+    const { jwks_uri } = await endpoints();
+    const r = await fetch(jwks_uri, { cache: 'no-store' });
+    if (!r.ok) throw new Error(`signing keys: ${r.status}`);
+    keys = { at: Date.now(), list: ((await r.json()) as { keys?: Jwk[] }).keys ?? [] };
+  }
+  return find();
+}
+
+/**
+ * Checks the identity token returned with a sign-in: Shopify's signature (RS256 or Ed25519, against
+ * the store's published keys), the issuer, that it was issued to this store's client, that it has
+ * not expired, and that it carries the nonce this sign-in sent. Throws if any check fails.
+ */
+export async function verifyIdToken(idToken: string | undefined, nonce: string | undefined): Promise<void> {
+  const { createPublicKey, verify } = await import('node:crypto');
+  const parts = (idToken ?? '').split('.');
+  if (parts.length !== 3) throw new Error('no identity token');
+  const [h, p, s] = parts;
+  const header = JSON.parse(Buffer.from(h, 'base64url').toString('utf8')) as { alg?: string; kid?: string };
+  const claims = JSON.parse(Buffer.from(p, 'base64url').toString('utf8')) as { iss?: string; aud?: string | string[]; exp?: number; nonce?: string };
+
+  const jwk = await signingKey(header.kid);
+  if (!jwk) throw new Error('unknown signing key');
+  const key = createPublicKey({ key: jwk as import('node:crypto').JsonWebKey, format: 'jwk' });
+  const data = Buffer.from(`${h}.${p}`);
+  const sig = Buffer.from(s, 'base64url');
+  const alg = (header.alg || '').toUpperCase();
+  const ok = alg === 'RS256' ? verify('RSA-SHA256', data, key, sig)
+    : alg === 'EDDSA' || alg === 'ED25519' ? verify(null, data, key, sig)
+    : false; // "none" and anything unexpected are refused
+  if (!ok) throw new Error('bad signature');
+
+  const { issuer } = await endpoints();
+  const aud = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+  if (issuer && claims.iss !== issuer) throw new Error('wrong issuer');
+  if (!aud.includes(CLIENT_ID)) throw new Error('wrong audience');
+  if (!claims.exp || claims.exp * 1000 < Date.now() - 60_000) throw new Error('expired');
+  // the nonce is compared whenever Shopify echoes it, which OpenID Connect requires when one was sent
+  if (claims.nonce !== undefined && claims.nonce !== nonce) throw new Error('nonce mismatch');
 }
 
 type TokenResponse = { access_token: string; refresh_token?: string; id_token?: string; expires_in: number };

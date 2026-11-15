@@ -46,7 +46,7 @@ In Shopify, set the callback to `https://shop.avvvs.com/account/callback`, the J
 | Variable | Where | Value / where to get it | Secret? |
 |---|---|---|---|
 | `SHOPIFY_WEBHOOK_SECRET` | Vercel | Shopify admin → **Settings → Notifications → Webhooks** → *Signing secret* (copy icon). The store checks every webhook's signature against it. | **Yes** |
-| `SHOPIFY_REVALIDATE_SECRET` | Vercel | Optional. Any long random string you make up; lets you refresh the catalogue by hand with a POST to `https://shop.avvvs.com/api/revalidate?secret=<this>`. | **Yes** |
+| `SHOPIFY_REVALIDATE_SECRET` | Vercel | Optional. Any long random string you make up; lets you refresh the catalogue by hand with a POST to `https://shop.avvvs.com/api/revalidate` carrying it in an `X-Revalidate-Secret` header (preferred, as it stays out of request logs) or as `?secret=<this>`. At least 16 characters. | **Yes** |
 
 Without them, pages still refresh from Shopify every 5 minutes. Webhook list: `SHOPIFY_SETUP.md` §5.
 

@@ -1,16 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { CLIENT_ID, exchangeCode } from '@/lib/shopify/customer';
+import { exchangeCode, verifyIdToken } from '@/lib/shopify/customer';
 import { FLAG_COOKIE, OAUTH_COOKIE, SESSION_COOKIE, seal, unseal } from '@/lib/session';
 import { safeBack } from '@/lib/security';
-
-/**
- * The claims inside the identity token. The token arrives straight from Shopify's token endpoint
- * over TLS in exchange for our one-time code and PKCE verifier, which is what vouches for it
- * (OpenID Connect Core 3.1.3.7); here we check it was issued for this sign-in and this store.
- */
-function claims(idToken?: string): { nonce?: string; aud?: string | string[]; exp?: number } | null {
-  try { return idToken ? JSON.parse(Buffer.from(idToken.split('.')[1], 'base64url').toString('utf8')) : null; } catch { return null; }
-}
 
 export async function GET(req: NextRequest) {
   const p = req.nextUrl.searchParams;
@@ -21,13 +12,10 @@ export async function GET(req: NextRequest) {
   if (!saved || !p.get('code') || p.get('state') !== saved.state) return fail('expired');
   try {
     const session = await exchangeCode(p.get('code')!, saved.verifier);
-    const c = claims(session.idToken);
-    if (c) {
-      const aud = c.aud === undefined ? null : Array.isArray(c.aud) ? c.aud : [c.aud];
-      if ((c.nonce !== undefined && c.nonce !== saved.nonce) || (aud && !aud.includes(CLIENT_ID)) || (c.exp !== undefined && c.exp * 1000 < Date.now())) {
-        console.error('[account] identity token did not match this sign-in');
-        return fail('failed');
-      }
+    // Shopify's signature, issuer, audience, expiry and nonce on the identity token
+    try { await verifyIdToken(session.idToken, saved.nonce); } catch (e) {
+      console.error('[account] identity token refused:', e instanceof Error ? e.message : e);
+      return fail('failed');
     }
     const res = NextResponse.redirect(new URL(safeBack(saved.back), req.url));
     res.cookies.set(SESSION_COOKIE, await seal(session), { httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 60 * 60 * 24 * 30 });

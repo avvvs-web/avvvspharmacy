@@ -10,7 +10,21 @@ Code fixes for every finding below are in the commit after this assessment. The 
 
 **Still to do:** retest each finding the way it was found. In particular, sign-in has not been tried end to end since the token checks were added, and prescription upload has not been tried against a private Blob store.
 
-**L4** was fixed separately: the webhook now accepts Shopify's signature (`SHOPIFY_WEBHOOK_SECRET`). The secret in the address is still accepted for manual refreshes and is compared with `===`.
+**L4** was fixed separately: the webhook now accepts Shopify's signature (`SHOPIFY_WEBHOOK_SECRET`).
+
+### Remaining low items (15 November 2026, later the same day)
+
+| Item | Now |
+|---|---|
+| L4 manual-refresh secret | Compared in constant time, must be 16+ characters, and can be sent in an `X-Revalidate-Secret` header so it stays out of request logs (`?secret=` still works). Signed webhooks older than an hour by `X-Shopify-Triggered-At` are refused as replays, and the endpoint is rate-limited. |
+| L7 identity token | Verified properly: Shopify's signature against the store's published keys (RS256 or Ed25519; `none` and other algorithms refused), the issuer from the discovery document, the audience, expiry and the nonce. A token that fails any check ends the sign-in with the fixed "failed" message. Tested with tokens signed locally (valid, tampered, unsigned, wrong key) and by loading Shopify's real keys; **not yet tried with a real sign-in**. |
+| L8 `/api/health` | Answers only `ok` and a time; the shop's name and token status are no longer shown. |
+| GitHub settings | **Still to do, by an admin of the `avvvs-web` organisation** (the account used here can push but not change settings). See below. |
+
+**GitHub, for an organisation admin** (repository `avvvs-web/avvvspharmacy` → Settings):
+1. *Code security*: turn on Dependabot alerts, Dependabot security updates, secret scanning and push protection.
+2. *Branches* → add a rule for `main`: block force pushes and block deletion. Don't require pull requests or status checks unless you want every change to go through a pull request, because that would stop direct pushes to `main`.
+3. Consider making the repository private. Check first that the Vercel plan can deploy a private repository owned by an organisation; on the free Hobby plan it can't, and deploys would stop.
 
 ## Scope and method
 
