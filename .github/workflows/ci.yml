@@ -5,17 +5,26 @@ on:
     branches: [main]
   pull_request:
 
+# the workflow only reads the code; it holds no secrets and cannot write to the repository
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # third-party actions are pinned to an exact commit, so a moved tag cannot change what runs
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      # fail on any known high-severity advisory in what ships
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm run typecheck
       - run: npx playwright install --with-deps chromium
       # builds, starts the store and runs the smoke tests against the live Shopify catalogue
@@ -23,7 +32,7 @@ jobs:
         env:
           SHOPIFY_STORE_DOMAIN: avvvsglobal.myshopify.com
           NEXT_PUBLIC_SITE_URL: http://localhost:3105
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
           name: playwright-report

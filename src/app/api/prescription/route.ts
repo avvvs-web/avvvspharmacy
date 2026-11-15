@@ -1,25 +1,25 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { put } from '@vercel/blob';
 import { randomUUID } from 'node:crypto';
+import { CART_COOKIE } from '@/lib/session';
+import { overLimit } from '@/lib/ratelimit';
+import { PRESCRIPTION_LINKS_READY, clientIp, prescriptionLink, sameOrigin } from '@/lib/security';
 
-// Receives an optional prescription for the cart. Checks type and size, stores it in Vercel Blob
-// under a random, unguessable name, and returns the link that is saved on the cart.
+/*
+ * Receives an optional prescription for the cart.
+ *  - Only a page of this store, with a cart, may upload (no anonymous file hosting).
+ *  - Type is read from the file's own first bytes, and size is capped.
+ *  - The file is stored PRIVATELY in Vercel Blob. What goes on the order is a signed link through
+ *    this store (/api/prescription/file) that stops working after 60 days; the storage address
+ *    itself is never shown to anyone.
+ */
 export const runtime = 'nodejs';
 
 const TYPES: Record<string, string> = {
-  'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heif',
+  'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic',
 };
-const MAX = 10 * 1024 * 1024;
-
-// a light per-instance limit so the endpoint can't be used as free file hosting
-const hits = new Map<string, { n: number; at: number }>();
-function limited(ip: string) {
-  const now = Date.now();
-  const h = hits.get(ip);
-  if (!h || now - h.at > 60 * 60_000) { hits.set(ip, { n: 1, at: now }); return false; }
-  h.n++;
-  return h.n > 20;
-}
+// Vercel refuses request bodies above about 4.5 MB, so the limit stays safely under that.
+const MAX = 4 * 1024 * 1024;
 
 function sniff(b: Uint8Array): string | null {
   const s = (i: number, ...x: number[]) => x.every((v, k) => b[i + k] === v);
@@ -27,30 +27,39 @@ function sniff(b: Uint8Array): string | null {
   if (s(0, 0xff, 0xd8, 0xff)) return 'image/jpeg';
   if (s(0, 0x89, 0x50, 0x4e, 0x47)) return 'image/png';
   if (s(0, 0x52, 0x49, 0x46, 0x46) && s(8, 0x57, 0x45, 0x42, 0x50)) return 'image/webp';
-  if (s(4, 0x66, 0x74, 0x79, 0x70)) return 'image/heic'; // ISO media (HEIC/HEIF)
+  // ISO media: accept only the HEIC/HEIF brands, not video
+  if (s(4, 0x66, 0x74, 0x79, 0x70)) {
+    const brand = String.fromCharCode(b[8], b[9], b[10], b[11]);
+    if (['heic', 'heix', 'hevc', 'mif1', 'msf1', 'heif'].includes(brand)) return 'image/heic';
+  }
   return null;
 }
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'local';
-  if (limited(ip)) return NextResponse.json({ error: 'Too many uploads. Please try again later.' }, { status: 429 });
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+  if (!sameOrigin(req)) return NextResponse.json({ error: 'This upload did not come from the store.' }, { status: 403 });
+  const cart = req.cookies.get(CART_COOKIE)?.value;
+  if (!cart) return NextResponse.json({ error: 'Add a medicine to your cart first, then attach the prescription.' }, { status: 400 });
+  if (await overLimit(`rx:ip:${clientIp(req)}`, 10, 3600) || await overLimit(`rx:cart:${cart}`, 6, 3600)) {
+    return NextResponse.json({ error: 'Too many uploads. Please try again later.' }, { status: 429 });
+  }
+  if (!process.env.BLOB_READ_WRITE_TOKEN || !PRESCRIPTION_LINKS_READY()) {
     return NextResponse.json({ error: 'Prescription upload is not switched on yet. Please email it to mail@avvvs.com with your order number.' }, { status: 503 });
   }
+  if (Number(req.headers.get('content-length') ?? 0) > MAX + 64 * 1024) return NextResponse.json({ error: 'That file is larger than 4 MB.' }, { status: 413 });
   const form = await req.formData().catch(() => null);
   const file = form?.get('file');
   if (!(file instanceof File)) return NextResponse.json({ error: 'No file received.' }, { status: 400 });
-  if (file.size > MAX) return NextResponse.json({ error: 'That file is larger than 10 MB.' }, { status: 413 });
+  if (file.size > MAX) return NextResponse.json({ error: 'That file is larger than 4 MB.' }, { status: 413 });
   const bytes = new Uint8Array(await file.arrayBuffer());
   const type = sniff(bytes);
   if (!type || !TYPES[type]) return NextResponse.json({ error: 'Please upload a PDF or a photo (JPG, PNG or HEIC).' }, { status: 415 });
 
   const name = `prescriptions/${new Date().toISOString().slice(0, 7)}/${randomUUID()}.${TYPES[type]}`;
   try {
-    const blob = await put(name, Buffer.from(bytes), { access: 'public', contentType: type, addRandomSuffix: true });
-    return NextResponse.json({ url: blob.url });
+    const blob = await put(name, Buffer.from(bytes), { access: 'private', contentType: type, addRandomSuffix: true });
+    return NextResponse.json({ url: prescriptionLink(blob.pathname) });
   } catch (e) {
-    console.error('[prescription] upload failed', e);
+    console.error('[prescription] upload failed', e instanceof Error ? e.message : e);
     return NextResponse.json({ error: 'Upload failed. Please try again.' }, { status: 500 });
   }
 }

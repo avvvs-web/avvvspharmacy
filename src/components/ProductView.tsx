@@ -49,7 +49,7 @@ function Notify({ product }: { product: Product }) {
     e.preventDefault();
     const d = new FormData(e.currentTarget);
     setState('sending');
-    const r = await fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: d.get('email'), hp: d.get('company'), handle: product.handle, title: titleCase(product.title) }) })
+    const r = await fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: d.get('email'), hp: d.get('company'), handle: product.handle }) })
       .then((x) => x.json()).catch(() => ({ error: 'Could not send. Please try again.' }));
     if (r.error) { setState('error'); setMsg(r.error); } else setState('done');
   };

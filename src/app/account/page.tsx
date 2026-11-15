@@ -8,9 +8,16 @@ import { fitted } from '@/lib/shopify/image';
 
 type Props = { searchParams: Promise<{ error?: string }> };
 
+// Sign-in problems arrive as a short code; only these fixed messages are ever shown.
+const SIGN_IN_ERRORS: Record<string, string> = {
+  cancelled: 'Sign-in was cancelled.',
+  expired: 'Sign-in expired. Please try again.',
+  failed: 'Sign-in could not be completed. Please try again.',
+};
+
 export default async function AccountHome({ searchParams }: Props) {
   const { error } = await searchParams;
-  if (!(await getSession())) return error ? <p className="msg msg-error" role="alert">{error}</p> : null;
+  if (!(await getSession())) return error ? <p className="msg msg-error" role="alert">{SIGN_IN_ERRORS[error] ?? SIGN_IN_ERRORS.failed}</p> : null;
   const [c, orders] = await Promise.all([getCustomer(), getOrders()]);
   const recent = orders.nodes.slice(0, 3);
   const def = c.addresses.nodes.find((a) => a.id === c.defaultAddress?.id);

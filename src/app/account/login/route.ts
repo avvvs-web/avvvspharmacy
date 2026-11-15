@@ -1,11 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { ACCOUNTS_ENABLED, CLIENT_ID, REDIRECT_URI, endpoints } from '@/lib/shopify/customer';
 import { OAUTH_COOKIE, randomString, seal, sha256b64u } from '@/lib/session';
+import { safeBack } from '@/lib/security';
 
 // Starts Shopify sign-in (one-time code by email). PKCE: the verifier stays in an encrypted cookie.
 export async function GET(req: NextRequest) {
   if (!ACCOUNTS_ENABLED) return NextResponse.redirect(new URL('/account', req.url));
-  const back = req.nextUrl.searchParams.get('next');
+  // only a page of this store; "//host" and the like fall back to the account page
+  const back = safeBack(req.nextUrl.searchParams.get('next'));
   const state = randomString(16);
   const nonce = randomString(16);
   const verifier = randomString(48);
@@ -17,7 +19,7 @@ export async function GET(req: NextRequest) {
     code_challenge: await sha256b64u(verifier), code_challenge_method: 'S256', locale: 'en',
   }).toString();
   const res = NextResponse.redirect(url);
-  res.cookies.set(OAUTH_COOKIE, await seal({ state, nonce, verifier, back: back?.startsWith('/') ? back : '/account' }),
+  res.cookies.set(OAUTH_COOKIE, await seal({ state, nonce, verifier, back }),
     { httpOnly: true, sameSite: 'lax', secure: true, path: '/account', maxAge: 600 });
   return res;
 }

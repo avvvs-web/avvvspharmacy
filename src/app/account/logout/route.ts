@@ -2,9 +2,12 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { endpoints } from '@/lib/shopify/customer';
 import { FLAG_COOKIE, SESSION_COOKIE, unseal, type CustomerSession } from '@/lib/session';
 import { SITE_URL } from '@/lib/site';
+import { sameOrigin } from '@/lib/security';
 
-// Signs out here and at Shopify. POST only, so a link elsewhere can't sign someone out.
+// Signs out here and at Shopify. POST only, and only from a page of this store, so neither a link
+// nor a form on another website can sign someone out.
 export async function POST(req: NextRequest) {
+  if (!sameOrigin(req)) return new NextResponse('Sign-out must be started from the store.', { status: 403 });
   const s = await unseal<CustomerSession>(req.cookies.get(SESSION_COOKIE)?.value);
   let target = new URL('/', req.url).toString();
   if (s?.idToken) {

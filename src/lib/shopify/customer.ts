@@ -67,6 +67,8 @@ export async function getSession(): Promise<CustomerSession | null> {
 }
 
 export class CustomerAuthError extends Error {}
+/** A problem with what the customer typed ("Zip is invalid"): safe and useful to show them. */
+export class CustomerInputError extends Error {}
 
 export async function customerQuery<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
   const s = await getSession();
@@ -154,7 +156,7 @@ export async function getOrder(id: string) {
 
 type UserErrors = { userErrors: { field: string[] | null; message: string }[] };
 function check(p: UserErrors) {
-  if (p.userErrors?.length) throw new Error(p.userErrors.map((e) => e.message).join(' '));
+  if (p.userErrors?.length) throw new CustomerInputError(p.userErrors.map((e) => e.message).join(' '));
 }
 
 export type AddressInput = Partial<Omit<Address, 'id' | 'formatted'>>;

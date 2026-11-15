@@ -10,6 +10,7 @@ import { matchSymptoms } from '@/lib/symptoms';
 import { getSession } from '@/lib/shopify/customer';
 import * as Account from '@/lib/shopify/customer';
 import { logError } from '@/lib/log';
+import { isOwnPrescriptionLink, logId } from '@/lib/security';
 
 /* ---------------- cart ---------------- */
 
@@ -22,7 +23,7 @@ async function remember(cart: Cart) { (await cookies()).set(CART_COOKIE, cart.id
 
 async function run(fn: () => Promise<Cart>, action = 'cart'): Promise<CartResult> {
   try { return { cart: await fn() }; } catch (e) {
-    if (!(e instanceof C.CartError)) await logError(action, e, { cartId: await cartId() });
+    if (!(e instanceof C.CartError)) await logError(action, e, { cart: logId(await cartId()) });
     const id = await cartId();
     const cart = id ? await C.fetchCart(id).catch(() => null) : null;
     return { cart, error: e instanceof C.CartError ? e.message : 'Something went wrong. Please try again.' };
@@ -44,7 +45,9 @@ export async function getCart(): Promise<Cart | null> {
   return cart;
 }
 
-export async function addToCart(lines: C.LineInput[]): Promise<CartResult> {
+export async function addToCart(input: C.LineInput[]): Promise<CartResult> {
+  // at most 50 lines a call, 1 to 99 of each
+  const lines = (Array.isArray(input) ? input : []).slice(0, 50).map((l) => ({ merchandiseId: String(l.merchandiseId), quantity: Math.min(Math.max(1, Math.floor(Number(l.quantity)) || 1), 99) }));
   return run(async () => {
     const id = await cartId();
     const existing = id ? await C.fetchCart(id).catch(() => null) : null;
@@ -95,10 +98,11 @@ export async function saveNote(note: string): Promise<CartResult> {
 /** Records the uploaded prescription on the cart; it shows on the Shopify order as note attributes. */
 export async function attachPrescription(file: { url: string; name: string } | null): Promise<CartResult> {
   return run(async () => {
+    if (file && !isOwnPrescriptionLink(String(file.url))) throw new C.CartError('That prescription could not be attached. Please upload it again.');
     const id = (await cartId())!;
     const cart = await C.fetchCart(id);
     const keep = (cart?.attributes ?? []).filter((a) => !a.key.startsWith('Prescription')).map((a) => ({ key: a.key, value: a.value ?? '' }));
-    const attrs = file ? [...keep, { key: 'Prescription', value: file.url }, { key: 'Prescription file', value: file.name.slice(0, 120) }] : keep;
+    const attrs = file ? [...keep, { key: 'Prescription', value: file.url }, { key: 'Prescription file', value: String(file.name).replace(/[\u0000-\u001f<>]/g, '').slice(0, 120) }] : keep;
     return C.setAttributes(id, attrs);
   }, 'attachPrescription');
 }
@@ -144,21 +148,39 @@ export async function prepareCheckout(tracking?: CheckoutTracking): Promise<{ ur
     }
     return { url: cart.checkoutUrl };
   } catch (e) {
-    await logError('prepareCheckout', e, { cartId: id });
+    await logError('prepareCheckout', e, { cart: logId(id) });
     const cart = await C.fetchCart(id).catch(() => null);
-    return cart ? { url: cart.checkoutUrl } : { error: (e as Error).message };
+    return cart ? { url: cart.checkoutUrl } : { error: 'Checkout could not be started. Please try again.' };
   }
 }
 
 /* ---------------- browsing ---------------- */
 
-export async function loadMore(source: { kind: 'collection'; handle: string } | { kind: 'products'; query?: string } | { kind: 'search'; term: string }, l: Listing): Promise<ProductPage> {
-  if (source.kind === 'collection') {
+/** A listing request as the browser may send it, reduced to known fields within sane bounds. */
+function cleanListing(l: Listing): Listing {
+  const num = (v: unknown) => (Number.isFinite(Number(v)) && Number(v) >= 0 ? Math.min(Number(v), 1_000_000) : undefined);
+  const sorts = ['featured', 'name', 'price-asc', 'price-desc', 'newest'] as const;
+  return {
+    sort: sorts.find((s) => s === l?.sort),
+    inStock: l?.inStock === true ? true : undefined,
+    min: l?.min === undefined ? undefined : num(l.min),
+    max: l?.max === undefined ? undefined : num(l.max),
+    type: typeof l?.type === 'string' && /^[A-Z_ &-]{1,40}$/i.test(l.type) ? l.type : undefined,
+    after: typeof l?.after === 'string' && l.after.length < 500 ? l.after : null,
+    first: Math.min(Math.max(1, Math.floor(Number(l?.first)) || 24), 48),
+  };
+}
+
+export async function loadMore(source: { kind: 'collection'; handle: string } | { kind: 'products' } | { kind: 'search'; term: string }, input: Listing): Promise<ProductPage> {
+  const l = cleanListing(input);
+  const none: ProductPage = { products: [], pageInfo: { hasNextPage: false, endCursor: null }, filters: [] };
+  if (source?.kind === 'collection') {
+    if (!/^[a-z0-9-]{1,200}$/i.test(String(source.handle))) return none;
     const r = await getCollectionPage(source.handle, l);
-    return r?.page ?? { products: [], pageInfo: { hasNextPage: false, endCursor: null }, filters: [] };
+    return r?.page ?? none;
   }
-  if (source.kind === 'search') return searchProducts(source.term, l);
-  return getProducts(l, source.query);
+  if (source?.kind === 'search') return searchProducts(String(source.term).slice(0, 80), l);
+  return getProducts(l);
 }
 
 export async function predictive(term: string): Promise<PredictiveResult> {
@@ -202,19 +224,28 @@ export async function syncWishlist(handles: string[]): Promise<boolean> {
   if (!(await getSession())) return false;
   try {
     const c = await Account.getCustomer();
-    await Account.saveWishlist(c.id, handles);
+    const clean = (Array.isArray(handles) ? handles : []).filter((h) => typeof h === 'string' && /^[a-z0-9-]{1,200}$/i.test(h)).slice(0, 200);
+    await Account.saveWishlist(c.id, clean);
     return true;
   } catch { return false; }
 }
 
 export type FormState = { ok?: boolean; error?: string };
 
+/** What to tell the customer when an account action fails: their own input problems as written, anything else a plain line. */
+async function accountError(action: string, e: unknown): Promise<string> {
+  if (e instanceof Account.CustomerInputError) return e.message;
+  if (e instanceof Account.CustomerAuthError) return 'Please sign in again.';
+  await logError(action, e);
+  return 'That could not be saved. Please try again.';
+}
+
 export async function saveProfile(_: FormState, fd: FormData): Promise<FormState> {
   try {
     await Account.updateProfile({ firstName: String(fd.get('firstName') ?? '').trim(), lastName: String(fd.get('lastName') ?? '').trim() });
     revalidatePath('/account');
     return { ok: true };
-  } catch (e) { return { error: (e as Error).message }; }
+  } catch (e) { return { error: await accountError('saveProfile', e) }; }
 }
 
 function addressFrom(fd: FormData): Account.AddressInput {
@@ -234,11 +265,11 @@ export async function saveAddress(_: FormState, fd: FormData): Promise<FormState
     else await Account.createAddress(addressFrom(fd), def);
     revalidatePath('/account/addresses');
     return { ok: true };
-  } catch (e) { return { error: (e as Error).message }; }
+  } catch (e) { return { error: await accountError('saveAddress', e) }; }
 }
 
 export async function removeAddress(id: string): Promise<FormState> {
-  try { await Account.deleteAddress(id); revalidatePath('/account/addresses'); return { ok: true }; } catch (e) { return { error: (e as Error).message }; }
+  try { await Account.deleteAddress(id); revalidatePath('/account/addresses'); return { ok: true }; } catch (e) { return { error: await accountError('removeAddress', e) }; }
 }
 
 /** Buy again: every still-available line of a past order goes back into the cart. */
@@ -256,5 +287,5 @@ export async function reorder(orderId: string): Promise<CartResult & { skipped?:
       if (r.error) skipped++; else last = r;
     }
     return { ...last, skipped };
-  } catch (e) { return { cart: null, error: (e as Error).message }; }
+  } catch (e) { return { cart: null, error: await accountError('reorder', e) }; }
 }

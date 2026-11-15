@@ -15,6 +15,7 @@ import { BuyBox, Gallery, ProductTracker } from '@/components/ProductView';
 import type { ProductCard } from '@/lib/shopify/types';
 import { RecentlyViewed } from '@/components/HomeParts';
 import { ChatIcon } from '@/components/Icons';
+import { cleanHtml } from '@/lib/html';
 
 type Props = { params: Promise<{ handle: string }> };
 export const revalidate = 300;
@@ -125,7 +126,7 @@ export default async function ProductPage({ params }: Props) {
             {hasDescription && (
               <details open>
                 <summary>About this medicine</summary>
-                <div className="body rte" dangerouslySetInnerHTML={{ __html: p.descriptionHtml }} />
+                <div className="body rte" dangerouslySetInnerHTML={{ __html: cleanHtml(p.descriptionHtml) }} />
               </details>
             )}
             {med.sections.map((s) => (

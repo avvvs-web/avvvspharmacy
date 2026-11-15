@@ -26,8 +26,8 @@ export const PrintIcon = (p: P) => <S {...p}><path d="M7 9V4h10v5M7 17H5v-6h14v6
 
 /** One small line drawing for each form of medicine (the "by preparation" index). Decorative. */
 const FORM_PATHS: Record<string, React.ReactNode> = {
-  // a cup of decoction, steaming
-  kashayam: <><path d="M5 10h12v3a6 6 0 0 1-12 0v-3Z" /><path d="M17 11h1.5a2 2 0 0 1 0 4H17" /><path d="M9 4c0 1.5 1 1.5 1 3M13 4c0 1.5 1 1.5 1 3" /><path d="M7 21h8" /></>,
+  // a measure of decoction: a handle-less tumbler with a herb leaf over it
+  kashayam: <><path d="M7 10h10l-1.1 9.2a2 2 0 0 1-2 1.8h-3.8a2 2 0 0 1-2-1.8L7 10Z" /><path d="M7.5 14h9" /><path d="M12 8c0-2.8 1.6-4.5 4.5-4.5C16.5 6.3 14.9 8 12 8Z" /><path d="M12 8v2" /></>,
   // a tonic bottle
   arishtam: <><path d="M10 3h4v3l2 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3V3Z" /><path d="M8 13h8" /></>,
   // a drop of oil

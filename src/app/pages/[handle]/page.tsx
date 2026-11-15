@@ -6,6 +6,7 @@ import { breadcrumbLd } from '@/lib/site';
 import { dateIN, stripHtml } from '@/lib/format';
 import { Crumbs } from '@/components/Crumbs';
 import { JsonLd } from '@/components/JsonLd';
+import { cleanHtml } from '@/lib/html';
 
 // Shopify Pages (shipping, returns, privacy, FAQs…) and, failing that, Shopify's own policies.
 type Props = { params: Promise<{ handle: string }> };
@@ -37,7 +38,7 @@ export default async function ContentPage({ params }: Props) {
         <h1>{p.title}</h1>
         {p.updatedAt && <p className="fine">Last updated {dateIN(p.updatedAt)}</p>}
       </header>
-      <article className="prose"><div className="rte" dangerouslySetInnerHTML={{ __html: p.body }} /></article>
+      <article className="prose"><div className="rte" dangerouslySetInnerHTML={{ __html: cleanHtml(p.body) }} /></article>
       <JsonLd data={breadcrumbLd([{ name: p.title, path: `/pages/${handle}` }])} />
     </div>
   );

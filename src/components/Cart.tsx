@@ -145,7 +145,7 @@ export function PrescriptionUpload({ cart }: { cart: Cart }) {
 
   const upload = async (f: File) => {
     setErr('');
-    if (f.size > 10 * 1024 * 1024) { setState('error'); setErr('That file is larger than 10 MB. Please upload a smaller photo or PDF.'); return; }
+    if (f.size > 4 * 1024 * 1024) { setState('error'); setErr('That file is larger than 4 MB. Please upload a smaller photo or PDF.'); return; }
     if (f.type && !ACCEPT.includes(f.type)) { setState('error'); setErr('Please upload a PDF or a photo (JPG, PNG or HEIC).'); return; }
     setState('uploading');
     const fd = new FormData();
@@ -180,7 +180,7 @@ export function PrescriptionUpload({ cart }: { cart: Cart }) {
           <button type="button" className="btn-quiet btn-sm" onClick={() => file.current?.click()} disabled={state === 'uploading'}>
             <UploadIcon className="" />{state === 'uploading' ? 'Uploading…' : 'Choose a file'}
           </button>
-          <span className="fine">PDF, JPG, PNG or HEIC, up to 10 MB</span>
+          <span className="fine">PDF, JPG, PNG or HEIC, up to 4 MB</span>
         </div>
       )}
       {err && <p className="msg msg-error" role="alert">{err}</p>}
