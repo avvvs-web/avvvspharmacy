@@ -99,7 +99,7 @@ export default async function Home() {
         <div className="wrap">
           <div className="section-head section-head-split" data-anim>
             <h2 id="concern-h">Find care by department</h2>
-            <p className="lead">Medicines grouped by AVVVS’s pharmacists the way a hospital groups its departments. For anything ongoing, please consult a doctor first.</p>
+            <p className="lead">Browse medicines sorted into health categories, organised by our team at AVVVS. If you have an ongoing health problem, please consult a doctor first.</p>
           </div>
           <ol className="concerns" data-anim="stagger">
             {CONCERNS.map((c) => (
@@ -149,7 +149,7 @@ export default async function Home() {
         <div className="wrap consult">
           <div className="consult-copy" data-anim>
             <h2 id="consult-h">Not sure which medicine is right for you?</h2>
-            <p className="lead">Ayurveda treats the person, not only the complaint. Our doctors can advise on medicines, dosage and diet before you order.</p>
+            <p className="lead">Ayurveda looks at the whole person, not just the complaint, so the right medicine is different for everyone. You don’t have to guess. Our doctors can advise you on medicines, dosage and diet before you order.</p>
             <a className="btn-quiet" href={CONTACT.clinic} rel="noopener">Consult a doctor</a>
           </div>
           <ol className="consult-steps" data-anim="stagger">
@@ -166,7 +166,7 @@ export default async function Home() {
           <p className="lead">Every medicine here is prepared by Arya Vaidya Vilasini Vaidya Sala in Kozhikode, Kerala. See how they are made.</p>
         </div>
         <ul className="trust" data-anim="stagger">
-          <li><b>Since {ORG.founded}</b><span>Three generations of Ayurveda in Kozhikode</span></li>
+          <li><b>Since {ORG.founded}</b><span>Four generations of Ayurveda in Kozhikode</span></li>
           <li><b>Made by AVVVS</b><span>In our own GMP-certified factory</span></li>
           <li><b>Secure checkout</b><span>Payments handled by Shopify</span></li>
           <li><b>Pharmacist help</b><span>Call or WhatsApp {CONTACT.phones[0]}</span></li>

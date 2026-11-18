@@ -7,7 +7,7 @@ export const MAIN_SITE = 'https://avvvs.com';
 
 export const CONTACT = {
   email: 'mail@avvvs.com',
-  phones: ['+91 80892 02091', '+91 90375 14016'],
+  phones: ['+91 80892 02091', '+91 80892 02092'],
   address: ['AVVVS Ayur Speciality Clinic', '60/3829/A, Annie Hall Road', 'Chalappuram PO, Kozhikode 673002', 'Kerala, India'],
   city: 'Kozhikode, Kerala, India',
   clinic: 'https://clinic.avvvs.com/',
@@ -60,18 +60,18 @@ export const COLLECTIONS = [
  * which medicines belong where; the store only shows what Shopify says.
  */
 export const CONCERNS = [
-  { slug: 'pain-management', name: 'Pain management', note: 'Joints, back and muscles' },
-  { slug: 'digestive-health', name: 'Digestive health', note: 'Digestion, appetite and the gut' },
-  { slug: 'respiratory', name: 'Respiratory care', note: 'Cough, cold and breathing' },
-  { slug: 'skin-and-hair', name: 'Skin & hair', note: 'Skin, scalp and hair' },
-  { slug: 'womens-health', name: "Women's health", note: 'Through every stage of life' },
-  { slug: 'childrens-health', name: "Children's health", note: 'Gentle care for the young' },
-  { slug: 'fever-and-immunity', name: 'Fever & immunity', note: 'Seasonal care and resilience' },
-  { slug: 'diabetes-and-metabolic', name: 'Diabetes & metabolic', note: 'Sugar, weight and metabolism' },
-  { slug: 'heart-and-circulation', name: 'Heart & circulation', note: 'Heart, blood and circulation' },
-  { slug: 'liver-and-kidney', name: 'Liver & kidney', note: 'Liver, kidney and urinary care' },
-  { slug: 'mind-sleep-nerves', name: 'Mind, sleep & nerves', note: 'Calm, sleep and the nervous system' },
-  { slug: 'rejuvenation', name: 'Rejuvenation (Rasayana)', note: 'General wellness and vitality' },
+  { slug: 'pain-management', name: 'Pain management', note: 'Back, joint and musculoskeletal health' },
+  { slug: 'digestive-health', name: 'Digestive health', note: 'Digestion and gut health' },
+  { slug: 'respiratory', name: 'Respiratory care', note: 'Cough, cold and chest congestion' },
+  { slug: 'skin-and-hair', name: 'Skin & hair', note: 'Skin, scalp and hair health' },
+  { slug: 'womens-health', name: "Women's health", note: 'Menstrual health, pregnancy and menopause' },
+  { slug: 'childrens-health', name: "Children's health", note: 'Health and well-being of children' },
+  { slug: 'fever-and-immunity', name: 'Fever & immunity', note: 'Fever, seasonal illness and immunity' },
+  { slug: 'diabetes-and-metabolic', name: 'Diabetes & metabolic', note: 'Blood sugar and metabolic health' },
+  { slug: 'heart-and-circulation', name: 'Heart & circulation', note: 'Heart and vascular health' },
+  { slug: 'liver-and-kidney', name: 'Liver & kidney', note: 'Liver function, renal health and urological health' },
+  { slug: 'mind-sleep-nerves', name: 'Mind, sleep & nerves', note: 'Mental well-being, sleep and nerve health' },
+  { slug: 'rejuvenation', name: 'Rejuvenation (Rasayana)', note: 'General wellness, vitality and healthy ageing' },
 ] as const;
 export type Concern = (typeof CONCERNS)[number];
 export const CONCERN_PREFIX = 'concern-';

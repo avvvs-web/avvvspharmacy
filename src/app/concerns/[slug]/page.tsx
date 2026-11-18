@@ -47,7 +47,7 @@ export default async function ConcernPage({ params, searchParams }: Props) {
           <a className="btn-quiet" href={CONTACT.clinic} rel="noopener"><DoctorIcon className="" /> Consult a doctor</a>
         </div>
         <div className="caution" role="note">
-          <p>This group is a way to browse, not a diagnosis. Please choose medicines with a doctor’s advice, especially for children, during pregnancy, or alongside other treatment.</p>
+          <p>This page is for browsing only. It does not tell you what condition you have. Please consult a doctor before choosing any medicine. This is especially important for children, during pregnancy, or if you are already receiving any other treatment.</p>
         </div>
       </header>
       {kits.length > 0 && (
