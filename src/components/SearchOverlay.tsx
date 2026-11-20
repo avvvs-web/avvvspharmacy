@@ -30,10 +30,12 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
   const [active, setActive] = useState(-1);
   const [recent, setRecent] = useState<string[]>([]);
   const seq = useRef(0);
+  const pointer = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setRecent(readRecent());
+    pointer.current = null;
     const t = window.setTimeout(() => input.current?.focus(), 30);
     document.documentElement.style.overflow = 'hidden';
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -93,7 +95,14 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
   const idx = (key: string) => options.findIndex((o) => o.key === key);
   const optProps = (key: string) => {
     const i = idx(key);
-    return { id: `${id}-opt-${i}`, role: 'option', 'aria-selected': i === active, onMouseEnter: () => setActive(i) } as const;
+    // A row is picked by the pointer only when the pointer really moves. Results that appear under
+    // a resting pointer must not be picked, or Enter would open that medicine in place of the search.
+    const onMouseMove = (e: React.MouseEvent) => {
+      const was = pointer.current;
+      pointer.current = { x: e.clientX, y: e.clientY };
+      if (was && (was.x !== e.clientX || was.y !== e.clientY) && i !== active) setActive(i);
+    };
+    return { id: `${id}-opt-${i}`, role: 'option', 'aria-selected': i === active, onMouseMove } as const;
   };
   const t = term.trim();
   const nothing = res && !loading && !options.length;

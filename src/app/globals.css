@@ -87,7 +87,8 @@ main { min-height: 60svh; padding-top: calc(var(--bar-h) + env(safe-area-inset-t
 /* ---------- announcement + bar ---------- */
 .notice { background: var(--ink); color: var(--band); font-size: 0.87rem; text-align: center; padding: var(--space-xs) var(--gutter-r) var(--space-xs) var(--gutter); }
 .notice a { color: var(--gold-hi); }
-.bar { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; z-index: var(--z-sticky-nav); background: var(--color-paper); transition: transform var(--dur-long) var(--ease-out); }
+/* 30 keeps the bar under the menu sheet (50), cart drawer (60), filters (70) and search (80), which cover it when open. */
+.bar { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; z-index: 30; background: var(--color-paper); transition: transform var(--dur-long) var(--ease-out); }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 31; background: var(--bar-bg); }
 .bar.is-scrolled { box-shadow: 0 10px 30px -22px var(--color-shade); }
 .bar.is-tucked { transform: translateY(calc(-100% - env(safe-area-inset-top, 0px))); box-shadow: none; }
