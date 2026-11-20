@@ -1,10 +1,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { getCollectionPage, getProducts } from '@/lib/shopify/catalog';
+import { getCollectionPage, getProducts, getProductsByHandles } from '@/lib/shopify/catalog';
 import { safe } from '@/lib/shopify/client';
 import type { ProductPage } from '@/lib/shopify/types';
 import { COLLECTIONS, CONCERNS, CONTACT, FORMS, MAIN_SITE, ORG, formByType } from '@/lib/site';
-import { money } from '@/lib/format';
+import { money, titleCase } from '@/lib/format';
 import { medicineName } from '@/content/medicines';
 import { GlovedaBanner } from '@/components/Gloveda';
 import { HeroShowcase } from '@/components/HeroShowcase';
@@ -20,17 +20,23 @@ export const revalidate = 300;
 // everyday words the symptom search understands (src/content/synonyms.ts)
 const TRY = ['back pain', 'hair fall', 'acidity', 'cough', 'joint pain'];
 
+// Medicines the hero shows first, by Shopify handle, in this order. One that is a draft, has no
+// photograph or is out of stock is left out, and the proprietary medicines fill the four places.
+const HERO_FIRST = ['hair-greens-hair-oil'];
+
 const EMPTY: ProductPage = { products: [], pageInfo: { hasNextPage: false, endCursor: null }, filters: [] };
 
 export default async function Home() {
-  const [classical, proprietary, popular] = await Promise.all([
+  const [classical, proprietary, popular, first] = await Promise.all([
     safe(getCollectionPage('classical', { inStock: true, first: 8 }).then((r) => r?.page ?? EMPTY), EMPTY),
     safe(getCollectionPage('proprietary', { inStock: true, first: 6 }).then((r) => r?.page ?? EMPTY), EMPTY),
     safe(getProducts({ inStock: true, sort: 'featured', first: 8 }), EMPTY),
+    safe(getProductsByHandles(HERO_FIRST), []),
   ]);
   // the hero shows AVVVS's own proprietary medicines (those with a photograph)
-  const showcase = proprietary.products.filter((p) => p.featuredImage).slice(0, 4).map((p) => ({
-    handle: p.handle, name: medicineName(p.handle, p.title), form: formByType(p.productType)?.name ?? 'Proprietary',
+  const pinned = first.filter((p) => p.availableForSale);
+  const showcase = [...pinned, ...proprietary.products.filter((p) => !pinned.some((f) => f.handle === p.handle))].filter((p) => p.featuredImage).slice(0, 4).map((p) => ({
+    handle: p.handle, name: medicineName(p.handle, p.title), form: formByType(p.productType)?.name ?? (p.productType ? titleCase(p.productType) : 'Proprietary'),
     price: money(p.priceRange.minVariantPrice, { compact: true }), image: fitted(p.featuredImage!.url),
   }));
 
