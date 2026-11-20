@@ -210,11 +210,14 @@ export async function getProductsByHandles(handles: string[]): Promise<ProductCa
   if (!handles.length) return [];
   const clean = handles.filter((h) => /^[a-z0-9-]+$/i.test(h)).slice(0, 48);
   if (!clean.length) return [];
+  // One aliased product(handle:) per handle. The Storefront API ignores a `handle:` filter in a
+  // products search and returns unrelated products, so a search cannot be used here.
+  const vars = clean.map((_, i) => `$h${i}: String!`).join(', ');
+  const fields = clean.map((_, i) => `p${i}: product(handle: $h${i}) { ...Card }`).join('\n');
   const q = `${IMAGE}${CARD}
-  query ByHandle($query: String!, $first: Int!) { products(first: $first, query: $query) { nodes { ...Card } } }`;
-  const d = await storefront<{ products: Connection<ProductCard> }>(q, { query: clean.map((h) => `handle:${h}`).join(' OR '), first: clean.length }, { tags: ['products'] });
-  const byHandle = new Map(d.products.nodes.map((p) => [p.handle, p]));
-  return clean.map((h) => byHandle.get(h)).filter(Boolean) as ProductCard[];
+  query ByHandle(${vars}) { ${fields} }`;
+  const d = await storefront<Record<string, ProductCard | null>>(q, Object.fromEntries(clean.map((h, i) => [`h${i}`, h])), { tags: ['products'] });
+  return clean.map((_, i) => d[`p${i}`]).filter(Boolean) as ProductCard[];
 }
 
 /* ---------------- search ---------------- */
